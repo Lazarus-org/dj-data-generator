@@ -1,6 +1,6 @@
 import sys
 from random import choice
-from typing import Any, Dict, List, Optional, TextIO, Union
+from typing import Any, Dict, List, Optional, TextIO
 
 from django.apps import apps
 from django.core.management.base import BaseCommand
@@ -24,8 +24,8 @@ class Command(BaseCommand):
 
     def __init__(
         self,
-        stdout: TextIO | None = None,
-        stderr: TextIO | None = None,
+        stdout: Optional[TextIO] = None,
+        stderr: Optional[TextIO] = None,
         no_color: bool = False,
         force_color: bool = False,
     ):
