@@ -56,7 +56,7 @@ we’re thrilled that you want to contribute to `dj-data-generator`! to ensure a
 
 9. **Generate Changelog**: Create a changelog with Commitizen(only for the new version tag):
     ```bash
-    cz changelog --increamental
+    cz changelog --incremental
     ```
     the `--incremental` option limits changelog updates to only the new version tag, leaving previous entries unchanged. After generating the changelog, add it to the staging area and commit it manually:
 

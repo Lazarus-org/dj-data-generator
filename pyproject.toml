@@ -248,7 +248,7 @@ version = "1.0.0"
 tag_format = "v$version"
 
 [tool.commitizen.settings]
-increment_types = [ "feat", "fix" ]
+increment_types = [ "feat", "fix", "refactor" ]
 
 [tool.semantic_release]
 assets = [  ]
