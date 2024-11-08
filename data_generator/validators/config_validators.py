@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 
 from django.apps import apps
 from django.core.checks import Error
@@ -92,7 +92,7 @@ def validate_custom_field_values(
             continue
         model = apps.get_model(model_name)
         model_field_names = {f.name for f in model._meta.fields}
-        for field_name, value in fields.items():
+        for field_name in fields.keys():
             if not isinstance(field_name, str):
                 errors.append(
                     Error(
@@ -115,7 +115,7 @@ def validate_custom_field_values(
     return errors
 
 
-def validate_model_existence(model: str, config_name: str) -> Error:
+def validate_model_existence(model: str, config_name: str) -> Optional[Error]:
     """Validate that the specified model exists in the Django project.
 
     Args:
@@ -126,6 +126,7 @@ def validate_model_existence(model: str, config_name: str) -> Error:
     Returns:
     -------
         Optional[Error]: An error object if the model is not found; otherwise, None.
+
     """
     try:
         apps.get_model(model)
@@ -135,3 +136,4 @@ def validate_model_existence(model: str, config_name: str) -> Error:
             hint="Ensure the model name is correct and defined with 'app_label.ModelName' in your project.",
             id=f"data_generator.E007_{config_name}",
         )
+    return None

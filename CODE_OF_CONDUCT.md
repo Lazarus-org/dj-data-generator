@@ -30,7 +30,7 @@ we’re thrilled that you want to contribute to `dj-data-generator`! to ensure a
     ```
 
 6. **Commit Your Changes**: Use Commitizen to commit your changes according to the Conventional Commits specification:
- 
+
    ```bash
    cz commit
    ```

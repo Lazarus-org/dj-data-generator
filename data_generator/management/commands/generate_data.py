@@ -1,6 +1,6 @@
 import sys
 from random import choice
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, TextIO, Union
 
 from django.apps import apps
 from django.core.management.base import BaseCommand
@@ -11,14 +11,35 @@ from data_generator.settings.conf import config
 
 
 class Command(BaseCommand):
-    """Management command to generate fake data for all models within a Django project.
+    """Management command to generate fake data for models within a Django
+    project.
 
-    This command generates a specified number of records per model, skipping
-    internal Django models, and provides options to skip confirmation prompts
-    and customize the number of records per model.
+    This command generates a specified number of records per model,
+    skipping internal Django models, and provides options to skip
+    confirmation prompts and customize the number of records per model.
+
     """
 
-    help = "Generate fake data for all models"
+    help = "Generate fake data for project models"
+
+    def __init__(
+        self,
+        stdout: TextIO | None = None,
+        stderr: TextIO | None = None,
+        no_color: bool = False,
+        force_color: bool = False,
+    ):
+        super().__init__(stdout, stderr, no_color, force_color)
+        self.num_records = None
+        self.records_threshold = 100000
+        self.processed_models = set()
+        self.related_instance_cache = {}
+        self.django_models = [
+            "admin.LogEntry",
+            "auth.Permission",
+            "contenttypes.ContentType",
+            "sessions.Session",
+        ]
 
     def add_arguments(self, parser) -> None:
         """Add optional arguments to the command parser.
@@ -52,19 +73,11 @@ class Command(BaseCommand):
         ----
             *args: Variable length argument list.
             **options: Arbitrary keyword arguments containing command options.
+
         """
-        self.num_records = options.get("num_records")
         skip_confirm = options.get("skip_confirmation")
         specified_model = options.get("model")
-        self.records_threshold = 100000
-        self.processed_models = set()
-        self.related_instance_cache = dict()
-        self.django_models = [
-            "admin.LogEntry",
-            "auth.Permission",
-            "contenttypes.ContentType",
-            "sessions.Session",
-        ]
+        self.num_records = options.get("num_records")
 
         if self.num_records < 1:
             self.stdout.write(
@@ -101,7 +114,7 @@ class Command(BaseCommand):
         for model in models:
             self.generate_data_for_model(model)
 
-    def _get_model(self, model_name: str) -> Any:
+    def _get_model(self, model_name: str) -> Optional[Any]:
         """Retrieve a specific model by its name.
 
         Args:
@@ -111,6 +124,7 @@ class Command(BaseCommand):
         Returns:
         -------
             Model class if found, else None.
+
         """
         try:
             return apps.get_model(model_name)
@@ -121,13 +135,16 @@ class Command(BaseCommand):
                 f"'app_label.ModelName' and the app is installed."
             )
             self.stdout.write(self.style.ERROR(error_message))
+        return None
 
     def _get_target_models(self) -> List[Any]:
-        """Retrieve a list of models for data generation, excluding internal Django models.
+        """Retrieve a list of models for data generation, excluding internal
+        Django models.
 
         Returns:
         -------
             List[Model]: List of Django models for data generation.
+
         """
         return [
             model
@@ -143,6 +160,7 @@ class Command(BaseCommand):
         Args:
         ----
             model (Model): The Django model class to generate data for.
+
         """
         model_name = model.__name__
         if model in self.processed_models or model_name in self.django_models:
@@ -161,7 +179,7 @@ class Command(BaseCommand):
             model._default_manager.bulk_create(instances, ignore_conflicts=True)
             self._display_progress(i + len(instances), self.num_records, model_name)
 
-        self.stdout.write(f"\nDone!")
+        self.stdout.write("\nDone!")
 
         # Mark the model as processed
         self.processed_models.add(model)
@@ -169,7 +187,8 @@ class Command(BaseCommand):
         self.related_instance_cache.clear()
 
     def _generate_model_data(self, model: Any, unique_values: Dict) -> Dict[str, Any]:
-        """Generate a dictionary of field data for a model instance, handling unique and related fields.
+        """Generate a dictionary of field data for a model instance, handling
+        unique and related fields.
 
         Args:
         ----
@@ -178,6 +197,7 @@ class Command(BaseCommand):
         Returns:
         -------
             Dict[str, Any]: A dictionary of field values for model instantiation.
+
         """
         data: Dict = {}
         model_name = model.__name__
@@ -233,6 +253,7 @@ class Command(BaseCommand):
         Returns:
         -------
             Optional[int]: A random instance ID or None if no instances exist.
+
         """
         return (
             choice(self.related_instance_cache[model])
@@ -241,7 +262,8 @@ class Command(BaseCommand):
         )
 
     def get_unique_rel_instance(self, model: Any) -> Optional[int]:
-        """Retrieve a unique related instance ID and remove it from the cache to avoid duplication.
+        """Retrieve a unique related instance ID and remove it from the cache
+        to avoid duplication.
 
         Args:
         ----
@@ -250,6 +272,7 @@ class Command(BaseCommand):
         Returns:
         -------
             Optional[int]: A unique instance ID or None if no instances exist.
+
         """
         if self.related_instance_cache[model]:
             instance_id = choice(self.related_instance_cache[model])
@@ -258,7 +281,8 @@ class Command(BaseCommand):
         return None
 
     def _confirm_models(self, related_models: List[Any]) -> bool:
-        """Display the list of models for the user to review and ask for confirmation.
+        """Display the list of models for the user to review and ask for
+        confirmation.
 
         Args:
         ----
@@ -276,11 +300,13 @@ class Command(BaseCommand):
         return self._confirm_proceed()
 
     def _warn_high_record_count(self) -> bool:
-        """Warn the user if a large record count is specified, prompting confirmation.
+        """Warn the user if a large record count is specified, prompting
+        confirmation.
 
         Returns:
         -------
             bool: True if the user confirms, False otherwise.
+
         """
         warning_message = (
             "\nWARNING: You have set --num-records to a large value "
@@ -314,11 +340,13 @@ class Command(BaseCommand):
             )
 
     def _check_record_threshold(self) -> bool:
-        """Check if the number of records exceeds the threshold and warn the user.
+        """Check if the number of records exceeds the threshold and warn the
+        user.
 
         Returns:
         -------
             bool: True if the user confirms to proceed, False if they cancel.
+
         """
         if self.num_records > self.records_threshold:
             if not self._warn_high_record_count():
@@ -328,7 +356,8 @@ class Command(BaseCommand):
         return True
 
     def _display_exclude_instructions(self) -> None:
-        """Display instructions for excluding apps or models from data generation."""
+        """Display instructions for excluding apps or models from data
+        generation."""
         self.stdout.write(
             self.style.WARNING(
                 "\nTo exclude certain apps or models, modify the settings:"
@@ -346,12 +375,13 @@ class Command(BaseCommand):
             current (int): The current number of records generated.
             total (int): The total number of records to generate.
             model_name (str): The name of the model being processed.
+
         """
         bar_length = 10  # Length of the progress bar
         progress = current / total
         block = int(bar_length * progress)
-        bar = f"{colors.GREEN}█ {colors.RESET}" * block + "─ " * (bar_length - block)
+        pr_bar = f"{colors.GREEN}█ {colors.RESET}" * block + "─ " * (bar_length - block)
         sys.stdout.write(
-            f"\r[ {bar}] {int(progress * 100)}% completed for {model_name}"
+            f"\r[ {pr_bar}] {int(progress * 100)}% completed for {model_name}"
         )
         sys.stdout.flush()

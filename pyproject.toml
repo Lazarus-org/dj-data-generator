@@ -132,7 +132,9 @@ disable = [
   "R1719", # The if expression can be replaced with 'bool(test)'
   "R1705", # Unnecessary "elif" after "return"
   "R0401",
+  "R0917",
 ]
+max-args = 10
 max-line-length = 88
 max-parents = 10
 ignore = [
