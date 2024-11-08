@@ -1,11 +1,45 @@
+[build-system]
+build-backend = "poetry.core.masonry.api"
+requires = [ "poetry-core" ]
+
 [tool.poetry]
 name = "dj-data-generator"
 version = "0.1.0"
-description = "A package for generate fake data"
-authors = ["ARYAN-NIKNEZHAD <aryan513966@gmail.com>", "MEHRSHAD-MIRSHEKARY <mehrshad_mirshekary@email.com>" ]
+description = "A package for generating fake data"
+authors = [ "ARYAN-NIKNEZHAD <aryan513966@gmail.com>", "MEHRSHAD-MIRSHEKARY <mehrshad_mirshekary@email.com>" ]
 keywords = [ "django_data_generator", "data_generator", "fake_data" ]
 license = "MIT"
 readme = "README.md"
+
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Environment :: Web Environment",
+  "Framework :: Django",
+  "Framework :: Django :: 4.2",
+  "Framework :: Django :: 5.0",
+  "Framework :: Django :: 5.1",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Topic :: Software Development :: Libraries :: Python Modules",
+]
+
+packages = [
+  { include = "data_generator" },
+]
+
+[tool.poetry.urls]
+"Source Code" = "https://github.com/Lazarus-org/dj-data-generator"
+"Changelog" = "https://github.com/lazarus-org/dj-data-generator/blob/main/CHANGELOG.md"
+"Issues" = "https://github.com/lazarus-org/dj-data-generator/issues"
 
 [tool.poetry.dependencies]
 python = "^3.9"
@@ -34,10 +68,180 @@ docformatter = "^1.7.5"
 codecov = "^2.1.13"
 python-semantic-release = "^9.8.8"
 
+[tool.black]
+line-length = 88
+exclude = '''
+/(
+    \.git
+  | \.venv
+  | \.tox
+  | build
+  | dist
+  | migrations
+  | venv
+  | env
+  | __pycache__
+  | node_modules
+  | env
+  | kernel
+  | \.mypy_cache
+  | \.pytest_cache
+  | .*\.egg-info
+)/
+'''
+
+[tool.isort]
+profile = "black"
+line_length = 88
+skip = [
+  "venv",
+  ".venv",
+  ".tox",
+  "build",
+  "dist",
+  ".git",
+  "__pycache__",
+  "*.egg-info",
+  ".mypy_cache",
+  ".pytest_cache",
+  "migrations",
+  "node_modules",
+  "env",
+  "kernel",
+]
+
+[tool.pylint]
+disable = [
+  "C0103", # Invalid constant name
+  "C0114", # Missing module docstring
+  "C0115", # Missing class docstring
+  "C0116", # Missing function or method docstring
+  "E1101", # Instance of 'Foo' has no 'bar' member
+  "W0212", # Access to a protected member
+  "C0301", # Line too long
+  "C0411", # Wrong import order
+  "W0611", # Unused imports
+  "W0613", # Unused arguments
+  "W0622", # Redefining built-in names
+  "W0718", # Catching too general exception
+  "R0903", # Too few public methods
+  "R0801", # Duplicate code
+  "W0621",
+  "C0415",
+  "R1719", # The if expression can be replaced with 'bool(test)'
+  "R1705", # Unnecessary "elif" after "return"
+  "R0401",
+]
+max-line-length = 88
+max-parents = 10
+ignore = [
+  "tests",
+  "migrations/*",
+  "venv/*",
+  "build/*",
+  "dist/*",
+  ".git/*",
+  ".tox/*",
+  "__pycache__/*",
+  "*.egg-info/*",
+  ".mypy_cache/*",
+  ".pytest_cache/*",
+]
+django-settings-module = "kernel.settings"
+load-plugins = [
+  "pylint_django",
+  "pylint.extensions.docparams",
+]
+
+suggestion-mode = true
+const-rgx = "([A-Z_][A-Z0-9_]*)|(__.*__)"
+attr-rgx = "[a-z_][a-z0-9_]{2,30}$"
+variable-rgx = "[a-z_][a-z0-9_]{2,30}$"
+argument-rgx = "[a-z_][a-z0-9_]{2,30}$"
+method-rgx = "[a-z_][a-z0-9_]{2,30}$"
+function-rgx = "[a-z_][a-z0-9_]{2,30}$"
+class-rgx = "[A-Z_][a-zA-Z0-9]+$"
+module-rgx = "(([a-z_][a-z0-9_]*)|(__.*__))$"
+
+[tool.pytest.ini_options]
+python_files = [ "tests.py", "test_*.py" ]
+testpaths = [ "data_generator/tests" ]
+addopts = "--cov --cov-report=term-missing --cov-report=html --cov-fail-under=90"
+markers = [
+  "commands: Tests for Django management commands in the package.",
+  "commands_generate_data: Tests focused on the `generate_data` management command.",
+  "validators: Marks tests for custom validators used throughout the project.",
+  "config_validators: Marks tests for configuration validators that validate the config values in project settings.",
+  "settings: Marks tests for settings and configurations in the project.",
+  "settings_check: Marks tests for settings validation, ensuring that required settings are correctly configured.",
+  "generators: Marks tests for generators used throughout the project.",
+  "generators_model_data_generator: Marks tests for model data generator that used in generate_data command.",
+]
+
+norecursedirs = [
+  "migrations",
+  "env",
+  "venv",
+  ".venv",
+  "dist",
+  "build",
+  "kernel",
+]
+
+[tool.coverage.run]
+source = [ "data_generator" ]
+omit = [
+  "*/tests/*",
+  "*/migrations/*",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+  "pragma: no cover",
+  "def __repr__",
+  "if self\\.debug",
+  "raise AssertionError",
+  "if 0:",
+  "if __name__ == .__main__.:",
+]
+
+[tool.mypy]
+mypy_path = "stubs"
+disallow_untyped_calls = true
+disallow_untyped_defs = true
+ignore_missing_imports = true
+explicit_package_bases = true
+exclude = """
+^docs/source/conf.py|
+^build/|
+^tests/|
+^stubs/|
+^kernel/
+"""
+
+[tool.bandit]
+targets = [ "./data_generator" ]
+exclude_dirs = [
+  "tests",
+  "migrations",
+]
+severity = "medium"
+confidence = "medium"
+max_lines = 500
+progress = true
+reports = true
+output_format = "screen"
+output_file = "bandit_report.txt"
+include = [ "B101", "B102" ]
+skips = [ "B311" ]
+exclude_tests = [ "B301", "B302" ]
+
+[tool.bandit.plugins]
+B104 = { check_typed_list = true }
 
 [tool.commitizen]
 name = "cz_conventional_commits"
-version = "1.2.0"
+version = "0.1.0"
 tag_format = "v$version"
 
 [tool.commitizen.settings]
@@ -53,7 +257,7 @@ major_on_zero = true
 allow_zero_version = true
 no_git_verify = false
 tag_format = "v{version}"
-#version_variables = [ "django_notification/version.py:__version__" ]
+#version_variables = [ "data_generator/version.py:__version__" ]
 
 [tool.semantic_release.branches.main]
 match = "(main|master)"
@@ -100,9 +304,3 @@ insecure = false
 [tool.semantic_release.publish]
 dist_glob_patterns = [ "dist/*" ]
 upload_to_vcs_release = true
-
-
-
-[build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
