@@ -33,6 +33,7 @@ sphinx-rtd-theme = "^2.0.0"
 docformatter = "^1.7.5"
 codecov = "^2.1.13"
 python-semantic-release = "^9.8.8"
+poetry-plugin-export = "^1.8.0"
 
 
 [tool.commitizen]
@@ -53,7 +54,7 @@ major_on_zero = true
 allow_zero_version = true
 no_git_verify = false
 tag_format = "v{version}"
-#version_variables = [ "django_notification/version.py:__version__" ]
+#version_variables = [ "data_generator/version.py:__version__" ]
 
 [tool.semantic_release.branches.main]
 match = "(main|master)"
