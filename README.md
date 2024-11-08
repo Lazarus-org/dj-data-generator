@@ -76,7 +76,7 @@ INSTALLED_APPS = [
 
 After setting up the package, run the `generate_data` management command to generate fake data for project models
 
-First, generate the audiences using the ``generate_audiences`` command:
+using the ``generate_data`` command:
 
 ```shell
 $ python manage.py generate_data --num-records=1000
@@ -146,7 +146,7 @@ $ python manage.py generate_data --num-records 1000
 Example:
 
 ```bash
-$ python manage.py generate_audiences --skip-confirmation
+$ python manage.py generate_data --skip-confirmation
 ```
 
 - ``model``:
@@ -220,7 +220,7 @@ Below is a detailed description of each setting, so you can better understand an
 
 **Default**: ``[]`` (empty list)
 
-**Description**: Specifies a list of app labels that should be excluded when running the `generate_data` command. If certain apps should not be considered for audience generation, list them here. For example:
+**Description**: Specifies a list of app labels that should be excluded when running the `generate_data` command. If certain apps should not be considered for data generation, list them here. For example:
 
 ```python
 
