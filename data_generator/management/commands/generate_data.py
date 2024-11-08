@@ -158,7 +158,7 @@ class Command(BaseCommand):
                 model(**self._generate_model_data(model, unique_values))
                 for _ in range(min(batch_size, self.num_records - i))
             ]
-            model.objects.bulk_create(instances, ignore_conflicts=True)
+            model._default_manager.bulk_create(instances, ignore_conflicts=True)
             self._display_progress(i + len(instances), self.num_records, model_name)
 
         self.stdout.write(f"\nDone!")
@@ -201,7 +201,7 @@ class Command(BaseCommand):
                 self.generate_data_for_model(related_model)
                 if related_model not in self.related_instance_cache:
                     self.related_instance_cache[related_model] = list(
-                        related_model.objects.order_by("-id").values_list(
+                        related_model._default_manager.order_by("-id").values_list(
                             "id", flat=True
                         )[: self.num_records]
                     )
