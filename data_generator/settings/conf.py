@@ -7,9 +7,9 @@ from data_generator.constants.types import CustomFieldValues
 
 
 class DataGeneratorConfig:
-    """A configuration handler for the Django Data Generator, allowing
-    settings to be dynamically loaded from Django settings with defaults
-    provided through `DefaultCommandSettings`.
+    """A configuration handler for the Django Data Generator, allowing settings
+    to be dynamically loaded from Django settings with defaults provided
+    through `DefaultCommandSettings`.
 
     Attributes:
         exclude_apps (List[str]): A list of apps excluded from data generation.
