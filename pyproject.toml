@@ -2,15 +2,19 @@
 build-backend = "poetry.core.masonry.api"
 requires = [ "poetry-core" ]
 
-[tool.poetry]
+[project]
 name = "dj-data-generator"
 version = "1.0.1"
 description = "A package for generating fake data"
-authors = [ "ARYAN-NIKNEZHAD <aryan513966@gmail.com>", "MEHRSHAD-MIRSHEKARY <mehrshad_mirshekary@email.com>" ]
-keywords = [ "django_data_generator", "data_generator", "fake_data" ]
-license = "MIT"
 readme = "README.md"
+keywords = [ "data", "data generator", "django data generator", "fake data", "generator" ]
 
+license = { text = "MIT" }
+authors = [
+  { name = "ARYAN-NIKNEZHAD", email = "aryan513966@gmail.com" },
+  { name = "MEHRSHAD-MIRSHEKARY", email = "mehrshad_mirshekary@email.com" },
+]
+requires-python = ">=3.9"
 classifiers = [
   "Development Status :: 3 - Alpha",
   "Environment :: Web Environment",
@@ -22,7 +26,6 @@ classifiers = [
   "License :: OSI Approved :: MIT License",
   "Operating System :: OS Independent",
   "Programming Language :: Python",
-  "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3 :: Only",
   "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
@@ -32,6 +35,7 @@ classifiers = [
   "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 
+[tool.poetry]
 packages = [
   { include = "data_generator" },
 ]
@@ -40,6 +44,9 @@ packages = [
 "Source Code" = "https://github.com/Lazarus-org/dj-data-generator"
 "Changelog" = "https://github.com/lazarus-org/dj-data-generator/blob/main/CHANGELOG.md"
 "Issues" = "https://github.com/lazarus-org/dj-data-generator/issues"
+
+[tool.poetry.requires-plugins]
+poetry-plugin-export = ">=1.9"
 
 [tool.poetry.dependencies]
 python = "^3.9"
@@ -67,7 +74,6 @@ sphinx-rtd-theme = "^2.0.0"
 docformatter = "^1.7.5"
 codecov = "^2.1.13"
 python-semantic-release = "^9.8.8"
-poetry-plugin-export = "^1.8.0"
 
 [tool.black]
 line-length = 88
