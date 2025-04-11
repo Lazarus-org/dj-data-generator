@@ -308,7 +308,7 @@ class Command(BaseCommand):
 
         """
         data: Dict = {}
-        model_name = model.__name__
+        model_name = f"{model._meta.app_label}.{model.__name__}"
 
         for field in model._meta.fields:
             field_name = field.name
