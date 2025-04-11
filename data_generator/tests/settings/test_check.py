@@ -13,7 +13,7 @@ pytestmark = [
 ]
 
 
-class TestCheckNotificationSettings:
+class TestCheckDataGeneratorSettings:
     @patch("data_generator.settings.check.config")
     def test_valid_settings(self, mock_config: MagicMock) -> None:
         """

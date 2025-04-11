@@ -1,6 +1,7 @@
+import logging
 import sys
 from random import choice
-from typing import Any, Dict, List, Optional, TextIO
+from typing import Any, Dict, List, Optional, TextIO, Tuple
 
 from django.apps import apps
 from django.core.management.base import BaseCommand
@@ -8,6 +9,8 @@ from django.core.management.base import BaseCommand
 from data_generator.constants.ansi_colors import colors
 from data_generator.generators.data_generator import model_data_generator
 from data_generator.settings.conf import config
+
+logger = logging.getLogger(__name__)
 
 
 class Command(BaseCommand):
@@ -147,11 +150,7 @@ class Command(BaseCommand):
 
         """
         return [
-            model
-            for model in apps.get_models()
-            if f"{model._meta.app_label}.{model.__name__}"
-            not in config.exclude_models + self.django_models
-            and model._meta.app_label not in config.exclude_apps
+            model for model in apps.get_models() if not self._is_model_excluded(model)
         ]
 
     def generate_data_for_model(self, model: Any) -> None:
@@ -159,48 +158,157 @@ class Command(BaseCommand):
 
         Args:
         ----
-            model (Model): The Django model class to generate data for.
+            model: The Django model class to generate data for.
 
         """
-        model_name = model.__name__
+        model_name = f"{model._meta.app_label}.{model.__name__}"
         if model in self.processed_models or model_name in self.django_models:
             return
 
+        self._ensure_related_models_generated(model)
         batch_size = max(100, self.num_records // 10)
 
         self.stdout.write(f"\nGenerating data for model: {model_name}")
-        unique_values: Dict = {}
-        self._display_progress(0, self.num_records, model_name)
-        for i in range(0, self.num_records, batch_size):
-            instances = [
-                model(**self._generate_model_data(model, unique_values))
-                for _ in range(min(batch_size, self.num_records - i))
-            ]
-            model._default_manager.bulk_create(instances, ignore_conflicts=True)
-            self._display_progress(i + len(instances), self.num_records, model_name)
 
+        unique_values: Dict = {}
+        instances = []
+        failed = False
+
+        for i in range(0, self.num_records, batch_size):
+            batch_instances, batch_failed = self._generate_batch_instances(
+                model, unique_values, min(batch_size, self.num_records - i)
+            )
+            if batch_failed:
+                failed = True
+                break
+            instances.extend(batch_instances)
+
+            self._display_progress(
+                i + len(batch_instances), self.num_records, model_name
+            )
+
+        if failed:
+            # Log error after progress bar to avoid disruption
+            logger.error(
+                "Failed to generate data for model '%s': "
+                "No instances found for related model(s), which are required for data generation. "
+                "Skipping data generation for this model.\n"
+                "Hint: Ensure at least one instance exist for related models or remove them "
+                "from 'DATA_GENERATOR_EXCLUDE_MODELS' or 'DATA_GENERATOR_EXCLUDE_APPS' in settings.",
+                model_name,
+            )
+            self.stdout.write(
+                self.style.ERROR(
+                    f"Skipped data generation for {model_name} due to missing related data.\n"
+                    "Hint: Create at least one instance for related models or remove them from excluded settings."
+                )
+            )
+            return
+
+        if instances:
+            model._default_manager.bulk_create(instances, ignore_conflicts=True)
+
+        self._display_progress(self.num_records, self.num_records, model_name)
         self.stdout.write("\nDone!")
 
-        # Mark the model as processed
         self.processed_models.add(model)
-        # Clear the related instances cache after generating data
         self.related_instance_cache.clear()
 
-    def _generate_model_data(self, model: Any, unique_values: Dict) -> Dict[str, Any]:
+    def _generate_batch_instances(
+        self, model: Any, unique_values: Dict, batch_size: int
+    ) -> Tuple[List[Any], bool]:
+        """Generate a batch of model instances.
+
+        Args:
+        ----
+            model: The Django model class to generate data for.
+            unique_values: Dictionary to track unique field values.
+            batch_size: Number of instances to generate in this batch.
+
+        Returns:
+        -------
+            Tuple containing:
+            - List of generated instances.
+            - Boolean indicating if generation failed.
+
+        """
+        instances = []
+        for _ in range(batch_size):
+            instance_data = self._generate_model_data(model, unique_values)
+            if instance_data is None:
+                return [], True
+            instances.append(model(**instance_data))
+        return instances, False
+
+    def _ensure_related_models_generated(self, model: Any) -> None:
+        """Ensure all related models have data generated before processing the
+        current model.
+
+        This method recursively checks the fields of the given model for relationships
+        (e.g., ForeignKey, OneToOneField) and generates data for any related models that
+        have not yet been processed. This ensures that dependent data is available before
+        generating data for the current model, avoiding issues with missing related instances.
+
+        Args:
+        ----
+            model: The Django model class to check for related models.
+
+        Returns:
+        -------
+            None
+
+        """
+        for field in model._meta.fields:
+            if field.is_relation:
+                related_model = field.related_model
+                # Always generate data for OneToOneField relations, even if excluded
+                if field.one_to_one and related_model not in self.processed_models:
+                    self.generate_data_for_model(related_model)
+                # For other relations, only generate if not excluded and not processed
+                elif (
+                    not self._is_model_excluded(related_model)
+                    and related_model not in self.processed_models
+                ):
+                    self.generate_data_for_model(related_model)
+
+                print(self._is_model_excluded(related_model))
+
+    def _is_model_excluded(self, model: Any) -> bool:
+        """Check if a model or its app is excluded from data generation.
+
+        Args:
+        ----
+            model: The Django model class to check.
+
+        Returns:
+        -------
+            bool: True if the model or its app is excluded, False otherwise.
+
+        """
+        model_name = f"{model._meta.app_label}.{model.__name__}"
+        return (
+            model_name in config.exclude_models + self.django_models
+            or model._meta.app_label in config.exclude_apps
+        )
+
+    def _generate_model_data(
+        self, model: Any, unique_values: Dict
+    ) -> Optional[Dict[str, Any]]:
         """Generate a dictionary of field data for a model instance, handling
         unique and related fields.
 
         Args:
         ----
-            model (Model): The Django model for which data is generated.
+            model: The Django model for which data is generated.
+            unique_values: Dictionary to track unique field values.
 
         Returns:
         -------
-            Dict[str, Any]: A dictionary of field values for model instantiation.
+            Dict[str, Any]: A dictionary of field values for model instantiation, or None if data cannot be generated.
 
         """
         data: Dict = {}
-        model_name = model.__name__
+        model_name = f"{model._meta.app_label}.{model.__name__}"
 
         for field in model._meta.fields:
             field_name = field.name
@@ -218,13 +326,15 @@ class Command(BaseCommand):
             generator = model_data_generator.field_generators.get(type(field).__name__)
             if field.is_relation:
                 related_model = field.related_model
-                self.generate_data_for_model(related_model)
                 if related_model not in self.related_instance_cache:
                     self.related_instance_cache[related_model] = list(
                         related_model._default_manager.order_by("-id").values_list(
                             "id", flat=True
                         )[: self.num_records]
                     )
+
+                if not self.related_instance_cache[related_model]:
+                    return None
 
                 rel_id_field = f"{field.name}_id"
                 if field.one_to_one:
@@ -274,11 +384,9 @@ class Command(BaseCommand):
             Optional[int]: A unique instance ID or None if no instances exist.
 
         """
-        if self.related_instance_cache[model]:
-            instance_id = choice(self.related_instance_cache[model])
-            self.related_instance_cache[model].remove(instance_id)
-            return instance_id
-        return None
+        instance_id = choice(self.related_instance_cache[model])
+        self.related_instance_cache[model].remove(instance_id)
+        return instance_id
 
     def _confirm_models(self, related_models: List[Any]) -> bool:
         """Display the list of models for the user to review and ask for
@@ -327,7 +435,7 @@ class Command(BaseCommand):
         """
         while True:
             user_input = (
-                input("\nType 'y' to proceed or 'n' to cancel the operation:")
+                input("\nType 'y' to proceed or 'n' to cancel the operation: ")
                 .strip()
                 .lower()
             )

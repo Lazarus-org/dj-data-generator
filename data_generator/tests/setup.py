@@ -76,7 +76,7 @@ def configure_django_settings() -> None:
                     },
                 },
             ],
-            DATA_GENERATOR_CUSTOM_FIELD_VALUES={"User": {"first_name": "somebody"}},
+            DATA_GENERATOR_CUSTOM_FIELD_VALUES={"auth.User": {"first_name": "somebody"}},
             LANGUAGE_CODE="en-us",
             TIME_ZONE="UTC",
             USE_I18N=True,

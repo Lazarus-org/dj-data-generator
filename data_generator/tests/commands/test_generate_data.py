@@ -3,6 +3,7 @@ from io import StringIO
 from unittest.mock import MagicMock, patch
 
 import pytest
+from django.contrib.admin.models import LogEntry
 from django.contrib.auth.models import User
 from django.core.management import call_command
 from django.db.models import CASCADE, BooleanField, ForeignKey, OneToOneField
@@ -251,10 +252,12 @@ class TestGenerateDataCommand:
         # Create a mock model-like object
         mock_model = MagicMock()
         mock_model.__name__ = "MockModel"
+        mock_model._meta.app_label = "app"
 
         # Related model mock
         rel_model = MagicMock()
         rel_model.__name__ = "MockRelModel"
+        rel_model._meta.app_label = "app"
         rel_model._meta.fields = [BooleanField(default=True)]
         rel_model._default_manager.bulk_create = MagicMock()
         rel_model._default_manager.order_by.return_value.values_list.return_value = [
@@ -264,13 +267,13 @@ class TestGenerateDataCommand:
         mock_model._meta.fields = [OneToOneField(rel_model, on_delete=CASCADE)]
         mock_model._default_manager.bulk_create = MagicMock()
 
-        mock_get_models.return_value = [mock_model]
+        mock_get_models.return_value = [mock_model, LogEntry]
 
         out = StringIO()
         call_command("generate_data", num_records=2, stdout=out)
 
-        assert "Generating data for model: MockModel" in out.getvalue()
-        assert "Generating data for model: MockRelModel" in out.getvalue()
+        assert "Generating data for model: app.MockModel" in out.getvalue()
+        assert "Generating data for model: app.MockRelModel" in out.getvalue()
         assert "Done!" in out.getvalue()
 
     @patch("builtins.input", side_effect=["y"])
@@ -292,14 +295,56 @@ class TestGenerateDataCommand:
         # Create a mock model-like object
         mock_model = MagicMock()
         mock_model.__name__ = "MockModel"
+        mock_model._meta.app_label = "app"
 
         # Related model mock
         rel_model = MagicMock()
         rel_model.__name__ = "MockRelModel"
+        rel_model._meta.app_label = "app"
         rel_model._meta.fields = [BooleanField(default=True)]
         rel_model._default_manager.bulk_create = MagicMock()
 
-        mock_model._meta.fields = [ForeignKey(rel_model, on_delete=CASCADE)]
+        mock_model._meta.fields = [
+            ForeignKey(rel_model, on_delete=CASCADE),
+            ForeignKey(User, on_delete=CASCADE),
+
+        ]
+        mock_model._default_manager.bulk_create = MagicMock()
+
+        mock_get_models.return_value = [mock_model, rel_model]
+
+        out = StringIO()
+        call_command("generate_data", num_records=1, stdout=out)
+
+        assert "Generating data for model: app.MockModel" in out.getvalue()
+        assert "Generating data for model: app.MockRelModel" in out.getvalue()
+        assert "Done!" in out.getvalue()
+
+    @patch("builtins.input", side_effect=["y"])
+    @patch("django.apps.apps.get_models")
+    def test_generate_data_with_foreign_key_user_model(
+        self, mock_get_models: MagicMock, mock_input: MagicMock
+    ) -> None:
+        """
+        Test data generation with User model object that handles ForeignKey relation.
+
+        Args:
+        ----
+            None
+
+        Asserts:
+        -------
+            The output should indicate that data generation has started and completed for both models.
+        """
+        # Create a mock model-like object
+        mock_model = MagicMock()
+        mock_model.__name__ = "MockModel"
+        mock_model._meta.app_label = "app"
+
+        mock_model._meta.fields = [
+            ForeignKey(User, on_delete=CASCADE),
+
+        ]
         mock_model._default_manager.bulk_create = MagicMock()
 
         mock_get_models.return_value = [mock_model]
@@ -307,6 +352,6 @@ class TestGenerateDataCommand:
         out = StringIO()
         call_command("generate_data", num_records=1, stdout=out)
 
-        assert "Generating data for model: MockModel" in out.getvalue()
-        assert "Generating data for model: MockRelModel" in out.getvalue()
+        assert "Generating data for model: app.MockModel" in out.getvalue()
+        assert "Generating data for model: auth.User" in out.getvalue()
         assert "Done!" in out.getvalue()
