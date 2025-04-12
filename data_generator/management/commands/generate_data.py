@@ -271,8 +271,6 @@ class Command(BaseCommand):
                 ):
                     self.generate_data_for_model(related_model)
 
-                print(self._is_model_excluded(related_model))
-
     def _is_model_excluded(self, model: Any) -> bool:
         """Check if a model or its app is excluded from data generation.
 
