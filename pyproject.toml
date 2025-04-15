@@ -4,7 +4,7 @@ requires = [ "poetry-core" ]
 
 [project]
 name = "dj-data-generator"
-version = "1.0.1"
+version = "1.0.2"
 description = "A package for generating fake data"
 readme = "README.md"
 keywords = [ "data", "data generator", "django data generator", "fake data", "generator" ]
@@ -250,7 +250,7 @@ B104 = { check_typed_list = true }
 
 [tool.commitizen]
 name = "cz_conventional_commits"
-version = "1.0.1"
+version = "1.0.2"
 version_files = [ "pyproject.toml" ]
 tag_format = "v$version"
 
