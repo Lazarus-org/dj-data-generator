@@ -6,7 +6,7 @@ We actively support the following versions of `dj-data-generator` with security 
 
 | Version | Supported          |
 |---------| ------------------ |
-| 1.0.0   | ✅ Fully supported |
+| 1.0.x   | ✅ Fully supported |
 
 ## Reporting a Vulnerability
 
